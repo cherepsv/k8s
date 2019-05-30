@@ -1,0 +1,60 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: bigtable-mcsvc
+  labels:
+    app: bigtable-mcsvc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bigtable-mcsvc
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app: bigtable-mcsvc
+    spec:
+      containers:
+      - name: bigtable-mcsvc
+        image: cherepaxa/bigtable-mcsvc:1.5
+        imagePullPolicy: IfNotPresent
+        env:
+        - BIGTABLE_EMULATOR_HOST=host:port
+        ports:
+        - containerPort: 8080
+        - containerPort: 6565
+        resources: 
+          requests: 
+            cpu: 500m
+            memory: 100Mi
+          limits:
+            cpu: 500m
+            memory: 1000Mi
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bigtable-mcsvc
+  labels:
+    app: bigtable-mcsvc
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8080
+    name: http
+    protocol: TCP
+    targetPort: 8080
+  - port: 6565
+    name: grpc
+    protocol: TCP
+    targetPort: 6565
+  selector:
+    app: bigtable-mcsvc
